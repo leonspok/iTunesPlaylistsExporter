@@ -7,6 +7,20 @@
 
 import Foundation
 
+public struct Parameters {
+    public var basePath: String?
+    public var pathToPrepend: String?
+    public var options: ExportOptions
+
+    public init(basePath: String? = nil,
+                pathToPrepend: String? = nil,
+                options: ExportOptions = []) {
+        self.basePath = basePath
+        self.pathToPrepend = pathToPrepend
+        self.options = options
+    }
+}
+
 public struct ExportOptions: OptionSet {
     public let rawValue: Int
 
@@ -17,28 +31,33 @@ public struct ExportOptions: OptionSet {
     public static let createDirectoryIfNeeded = ExportOptions(rawValue: 1 << 0)
     public static let overwrite = ExportOptions(rawValue: 1 << 1)
     public static let useRelativePaths = ExportOptions(rawValue: 1 << 2)
-    public static let useMusicDirectoryAsBase = ExportOptions(rawValue: 1 << 3)
 }
 
 public func exportPlaylists(from library: Library,
                             to outputDirectory: URL,
                             options: ExportOptions = []) throws {
+    try exportPlaylists(from: library, to: outputDirectory, parameters: Parameters(options: options))
+}
+
+public func exportPlaylists(from library: Library,
+                            to outputDirectory: URL,
+                            parameters: Parameters) throws {
 
     let fileManager = FileManager.default
-    if options.contains(.createDirectoryIfNeeded),
+    if parameters.options.contains(.createDirectoryIfNeeded),
        fileManager.fileExists(atPath: outputDirectory.standardizedFileURL.path) == false {
         try fileManager.createDirectory(at: outputDirectory, withIntermediateDirectories: true, attributes: nil)
     }
 
     try library.playlists.forEach({ playlist in
-        try export(playlist, from: library, to: outputDirectory, options: options)
+        try export(playlist, from: library, to: outputDirectory, parameters: parameters)
     })
 }
 
 public func export(_ playlist: Playlist,
                    from library: Library,
                    to outputDirectory: URL,
-                   options: ExportOptions = []) throws {
+                   parameters: Parameters) throws {
     let sanitizedFileName = playlist.sanitizedFileName
     let sameNamePlaylistIndex = library.playlists
         .filter {
@@ -53,9 +72,14 @@ public func export(_ playlist: Playlist,
     var m3uPlaylist = M3UPlaylist()
     m3uPlaylist.name = playlist.name
     m3uPlaylist.items = playlist.items.compactMap({ track in
-        if options.contains(.useRelativePaths) {
-            let baseURL = options.contains(.useMusicDirectoryAsBase) ? library.musicFolderLocation : outputDirectory
-            return calculateRelativePath(targetURL: track.location, baseURL: baseURL)
+        if parameters.options.contains(.useRelativePaths) {
+            let baseURL = parameters.basePath.flatMap(URL.init(fileURLWithPath:)) ?? outputDirectory
+            let relativePath = calculateRelativePath(targetURL: track.location, baseURL: baseURL)
+            if let pathToPrepend = parameters.pathToPrepend {
+                return pathToPrepend + relativePath
+            } else {
+                return relativePath
+            }
         } else {
             return track.location.standardizedFileURL.path
         }

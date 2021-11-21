@@ -24,9 +24,13 @@ struct Export: ParsableCommand {
           help: "Use relative paths in the generated playlist files")
     var useRelativePaths: Bool = false
 
-    @Flag(name: [.long],
-          help: "Use iTunes Music directory as base for relative paths")
-    var useMusicDirectoryAsBase: Bool = false
+    @Option(name: [.short, .long],
+            help: "Base path to calculate relative paths. If not specified, then output directory path is used.")
+    var basePath: String?
+
+    @Option(name: [.short, .long],
+            help: "Path that will be added to the beginning of all relative paths")
+    var pathToPrepend: String?
 
     @Flag(name: [.long],
           help: "Overwrite files in the outputdirectory")
@@ -40,9 +44,6 @@ struct Export: ParsableCommand {
         if self.useRelativePaths {
             options.insert(.useRelativePaths)
         }
-        if self.useMusicDirectoryAsBase {
-            options.insert(.useMusicDirectoryAsBase)
-        }
         if self.overwrite {
             options.insert(.overwrite)
         }
@@ -52,7 +53,11 @@ struct Export: ParsableCommand {
         try exportPlaylists(
             from: library,
             to: outputDirectory,
-            options: options
+            parameters: Parameters(
+                basePath: self.basePath,
+                pathToPrepend: self.pathToPrepend,
+                options: options
+            )
         )
     }
 }
