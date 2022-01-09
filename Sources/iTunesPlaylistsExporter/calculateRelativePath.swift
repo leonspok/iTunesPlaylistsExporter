@@ -8,10 +8,10 @@
 import Foundation
 
 func calculateRelativePath(targetURL: URL, baseURL: URL) -> String {
-    let targetAbsoluteURL = targetURL.absoluteURL.standardizedFileURL
+    let targetAbsoluteURL = targetURL.canonical ?? targetURL.standardizedFileURL.absoluteURL
     let targetComponents = targetAbsoluteURL.pathComponents
 
-    let baseAbsoluteURL = baseURL.absoluteURL.standardizedFileURL
+    let baseAbsoluteURL = baseURL.canonical ?? baseURL.standardizedFileURL.absoluteURL
     let baseComponents = baseAbsoluteURL.pathComponents
 
     let commonPathComponentsCount = targetComponents.enumerated().first(where: { index, pathComponent in

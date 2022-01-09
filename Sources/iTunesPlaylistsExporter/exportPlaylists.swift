@@ -81,7 +81,7 @@ public func export(_ playlist: Playlist,
                 return relativePath
             }
         } else {
-            return track.location.standardizedFileURL.path
+            return (track.location.canonical ?? track.location.standardizedFileURL).path
         }
     })
 

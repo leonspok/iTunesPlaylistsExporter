@@ -13,9 +13,11 @@ public func write(_ playlist: M3UPlaylist, to outputFileURL: URL, overwrite: Boo
     }
 
     let formattedPlaylist = format(playlist)
-    try formattedPlaylist.write(
-        to: outputFileURL,
-        atomically: true,
-        encoding: .utf8
-    )
+    try formattedPlaylist
+        .precomposedStringWithCanonicalMapping
+        .write(
+            to: outputFileURL,
+            atomically: true,
+            encoding: .utf8
+        )
 }
